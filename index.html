@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<!-- Добавь в <head> -->
+<script>
+async function registerUser() {
+  const response = await fetch('/api/auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'register',
+      fullName: document.getElementById('regFullName').value,
+      phone: document.getElementById('regPhone').value,
+      email: document.getElementById('regEmail').value,
+      password: document.getElementById('regPassword').value,
+      code: '000000'
+    })
+  });
+  
+  const result = await response.json();
+  if (result.success) {
+    localStorage.setItem('user', JSON.stringify(result.user));
+    alert('✅ Регистрация завершена!');
+  }
+}
+</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ассоциация выпускников</title>
+  <style>
+    /* Все стили остаются ТЕ САМЫЕ - без изменений */
+    :root {
+      --white: #ffffff;
+      --offwhite: #fafafa;
+      --lightgray: #f5f5f5;
+      --red-primary: #dc2626;
+      --red-light: #ef4444;
+      --red-dark: #b91c1c;
+      --gray: #6b7280;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--white);
+      color: #111827;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .modal {
+      display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+      width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(5px);
+    }
+
+    .modal.active { display: flex; align-items: center; justify-content: center; }
+
+    .modal-content {
+      background: var(--white); padding: 2.5rem; border-radius: 16px;
+      box-shadow: var(--shadow-lg); max-width: 450px; width: 90%;
+      max-height: 90vh; overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1.5rem; padding-bottom: 1rem;
+      border-bottom: 2px solid var(--red-primary);
+    }
+
+    .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--gray); }
+
+    .form-row { margin-bottom: 1.5rem; }
+    .form-row label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151; }
+    .form-row input { 
+      width: 100%; padding: 0.875rem 1rem; border: 2px solid #e5e7eb;
+      border-radius: 8px; font-size: 1rem; transition: all 0.2s ease;
+    }
+    .form-row input:focus { outline: none; border-color: var(--red-primary); box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1); }
+
+    header { position: sticky; top: 0; z-index: 100; background: var(--white); border-bottom: 3px solid var(--red-primary); box-shadow: var(--shadow); padding: 1rem 2rem; }
+    .header-row { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 2rem; }
+    .logo-wrapper { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border: 2px solid var(--red-primary); border-radius: 12px; cursor: pointer; transition: all 0.2s ease; font-weight: 600; font-size: 1.1rem; }
+    .logo-wrapper:hover { background: var(--red-primary); color: white; transform: translateY(-1px); }
+    .logo-img { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; }
+    .nav-menu { display: flex; gap: 2rem; align-items: center; }
+    .nav-link { color: #374151; text-decoration: none; font-weight: 500; padding: 0.5rem 1rem; border-radius: 8px; transition: all 0.2s ease; }
+    .nav-link:hover, .nav-link.active { color: var(--red-primary); background: #fef2f2; }
+    .profile-btn { display: flex; align-items: center; gap: 0.75rem; background: #fef2f2; border: 2px solid var(--red-light); padding: 0.75rem 1.25rem; border-radius: 25px; cursor: pointer; transition: all 0.2s ease; font-weight: 500; color: var(--red-primary); }
+    .profile-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--red-primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.9rem; }
+    .auth-buttons { display: flex; gap: 0.75rem; }
+    .btn { padding: 0.75rem 1.5rem; border: 2px solid transparent; border-radius: 8px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.95rem; }
+    .btn-primary { background: var(--red-primary); color: white; border-color: var(--red-primary); }
+    .btn-secondary { background: var(--white); color: var(--red-primary); border-color: var(--red-light); }
+    .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+
+    main { max-width: 1400px; margin: 2rem auto; padding: 0 2rem 4rem; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .section-title { font-size: 2.5rem; font-weight: 700; color: #111827; text-align: center; margin-bottom: 2rem; position: relative; }
+    .section-title::after { content: ''; position: absolute; bottom: -0.5rem; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background: var(--red-primary); border-radius: 2px; }
+    .card { background: var(--white); border: 1px solid #e5e7eb; border-radius: 16px; padding: 2rem; box-shadow: var(--shadow); transition: all 0.2s ease; }
+    .card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+    .profile-grid { display: grid; grid-template-columns: 300px 1fr; gap: 2rem; margin-top: 1.5rem; }
+    .avatar-preview { width: 160px; height: 160px; border-radius: 50%; border: 4px solid var(--red-primary); background: #fee2e2; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; font-size: 3rem; object-fit: cover; box-shadow: var(--shadow-lg); }
+    .admin-panel { display: none; background: #fef2f2; border: 2px solid var(--red-light); border-radius: 12px; padding: 1.5rem; margin-top: 2rem; }
+    .admin-panel.show { display: block; }
+    .news-list { display: flex; flex-direction: column; gap: 1.5rem; }
+    .news-item { padding: 1.75rem; border-left: 4px solid var(--red-primary); background: #fafafa; }
+    @media (max-width: 768px) { .header-row { flex-direction: column; gap: 1rem; } .profile-grid { grid-template-columns: 1fr; gap: 1.5rem; } }
+  </style>
+</head>
+<body>
+  <!-- МОДАЛЬНЫЕ ОКНА (БЕЗ ИЗМЕНЕНИЙ) -->
+  <div class="modal" id="loginModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🔐 Вход</h2>
+        <button class="close-btn" onclick="closeModal('loginModal')">×</button>
+      </div>
+      <form id="loginForm">
+        <div class="form-row">
+          <label>Email</label>
+          <input type="email" id="loginEmail" placeholder="your@email.com" required>
+        </div>
+        <div class="form-row">
+          <label>Пароль</label>
+          <input type="password" id="loginPassword" placeholder="••••••" required>
+        </div>
+        <div style="text-align: center; margin-top: 1rem; font-size: 0.9rem; color: var(--gray);">
+          👨‍💼 <strong>Админ:</strong> stasandandrey2020@gmail.com / admin123
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Войти</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="registerModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📝 Регистрация</h2>
+        <button class="close-btn" onclick="closeModal('registerModal')">×</button>
+      </div>
+      <form id="registerStep1">
+        <div class="form-row"><label>ФИО</label><input type="text" id="regFullName" required></div>
+        <div class="form-row"><label>Телефон</label><input type="tel" id="regPhone" required></div>
+        <div class="form-row"><label>Email</label><input type="email" id="regEmail" required></div>
+        <div class="form-row"><label>Пароль</label><input type="password" id="regPassword" minlength="6" required></div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Получить код</button>
+      </form>
+      <form id="registerStep2" style="display: none;">
+        <div class="form-row">
+          <label>Код (000000)</label>
+          <input type="text" id="regCode" maxlength="6" required>
+          <small style="color: var(--gray);">Тестовый код: 000000</small>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Завершить</button>
+        <button type="button" class="btn btn-secondary" onclick="showRegisterStep(1)" style="width: 100%; margin-top: 0.5rem;">Назад</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- HTML КОНТЕНТ (БЕЗ ИЗМЕНЕНИЙ) -->
+  <header>
+    <div class="header-row">
+      <div class="logo-wrapper" id="logoHome">
+        <img class="logo-img" src="Brend-Assotsiatsii.jpg" alt="Логотип" onerror="this.outerHTML='<div style=`width:50px;height:50px;background:var(--red-primary);color:white;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:1.1rem`>A</div>'">
+        <span>Ассоциация</span>
+      </div>
+      <nav class="nav-menu">
+        <a href="#" class="nav-link active" id="navNews">📰 Новости</a>
+        <a href="#" class="nav-link" id="navContacts">📞 Контакты</a>
+        <div class="profile-section" id="profileSection" style="display: none;">
+          <div class="profile-btn" id="profileBtn">
+            <div class="profile-avatar" id="profileAvatar">С</div>
+            Личный кабинет
+          </div>
+        </div>
+      </nav>
+      <div class="auth-buttons" id="authButtons">
+        <button class="btn btn-secondary" onclick="openModal('loginModal')">🔐 Вход</button>
+        <button class="btn btn-primary" onclick="openModal('registerModal')">📝 Регистрация</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="page active" id="pageHome">
+      <div class="card" style="max-width: 800px; margin: 0 auto; text-align: center;">
+        <h1 class="section-title">Ассоциация выпускников</h1>
+        <p style="font-size: 1.2rem; color: #6b7280; max-width: 600px; margin: 0 auto 2rem;">
+          Сообщество Tampere. <strong>Зарегистрируйтесь</strong> для полного доступа.
+        </p>
+        <div style="background: #fef2f2; padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--red-primary);">
+          <div style="font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--red-primary);">🔥 Админ:</div>
+          <div>stasandandrey2020@gmail.com / admin123</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="pageNews">
+      <h2 class="section-title">📰 Новости</h2>
+      <div class="news-list" id="newsList"></div>
+    </section>
+
+    <section class="page" id="pageContacts">
+      <div class="card" style="max-width: 600px; margin: 2rem auto;">
+        <h2 class="section-title">📞 Контакты</h2>
+        <p><strong>Email:</strong> admin@asso.tampere.fi</p>
+        <p><strong>Телефон:</strong> +358 40 123 4567</p>
+      </div>
+    </section>
+
+    <section class="page" id="pageProfile">
+      <h2 class="section-title">👤 Личный кабинет</h2>
+      <div class="profile-grid">
+        <div class="card" style="text-align: center;">
+          <div class="avatar-preview" id="avatarPreview">👤</div>
+          <input type="file" id="avatarInput" accept="image/*" style="display: none;">
+          <label for="avatarInput" class="btn btn-primary" style="width: 100%;">📷 Аватар</label>
+        </div>
+        <div class="card">
+          <form id="profileForm">
+            <div class="form-row"><label>ФИО</label><input type="text" id="profileFullName"></div>
+            <div class="form-row"><label>Телефон</label><input type="tel" id="profilePhone"></div>
+            <div class="form-row"><label>Email</label><input type="email" id="profileEmail"></div>
+            <div class="form-row"><label>О себе</label><textarea id="profileAbout" rows="3"></textarea></div>
+            <div class="form-row"><label>Роль</label><input type="text" id="userRole" readonly style="background: #f3f4f6;"></div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">💾 Сохранить</button>
+          </form>
+          <div class="admin-panel" id="adminPanel">
+            <h3 style="color: var(--red-primary);">🛠️ Админ-панель</h3>
+            <form id="adminForm">
+              <div class="form-row"><label>Заголовок</label><input type="text" id="postTitle" required></div>
+              <div class="form-row"><label>Текст</label><textarea id="postContent" rows="3" required></textarea></div>
+              <button type="submit" class="btn btn-primary" style="width: 100%;">📤 Опубликовать</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // 🔥 ИСПРАВЛЕННАЯ БАЗА ДАННЫХ
+    class Database {
+      constructor() {
+        this.dbName = 'asso_graduates_fixed';
+        this.init();
+      }
+
+      init() {
+        let data = localStorage.getItem(this.dbName);
+        if (!data) {
+          data = {
+            users: [{
+              id: 'admin1',
+              fullName: 'Станислав Долонько',
+              phone: '+358 40 123 4567', 
+              email: 'stasandandrey2020@gmail.com',
+              password: 'admin123',
+              about: 'Администратор',
+              role: 'admin'
+            }],
+            news: [{id: 1, title: 'Сайт запущен!', content: 'Полная авторизация работает', date: '17.03.2026'}],
+            currentUserId: null  // 🔥 ИСПРАВЛЕНО: храним ID вместо объекта
+          };
+          this.save(data);
+        }
+      }
+
+      get data() { return JSON.parse(localStorage.getItem(this.dbName)); }
+      
+      save(data) { localStorage.setItem(this.dbName, JSON.stringify(data)); }
+
+      findUser(email) {
+        return this.data.users.find(u => u.email === email);
+      }
+
+      getCurrentUser() {
+        const userId = this.data.currentUserId;
+        return userId ? this.data.users.find(u => u.id === userId) : null;
+      }
+
+      setCurrentUser(userId) {
+        const data = this.data;
+        data.currentUserId = userId;
+        this.save(data);
+      }
+
+      register(userData) {
+        const newUser = {
+          id: Date.now().toString(),
+          ...userData,
+          role: 'user',
+          about: ''
+        };
+        const data = this.data;
+        data.users.push(newUser);
+        this.save(data);
+        return newUser;
+      }
+
+      updateUser(userId, updates) {
+        const data = this.data;
+        const userIndex = data.users.findIndex(u => u.id === userId);
+        if (userIndex > -1) {
+          data.users[userIndex] = {...data.users[userIndex], ...updates};
+          this.save(data);
+        }
+      }
+
+      addNews(title, content) {
+        const data = this.data;
+        const newsItem = {
+          id: Date.now(),
+          title,
+          content,
+          date: new Date().toLocaleString('ru-RU')
+        };
+        data.news.unshift(newsItem);
+        this.save(data);
+      }
+    }
+
+    const db = new Database();
+
+    // ГЛОБАЛЬНЫЕ ФУНКЦИИ
+    function openModal(modalId) { 
+      document.getElementById(modalId).classList.add('active'); 
+      document.body.style.overflow = 'hidden'; 
+    }
+
+    function closeModal(modalId) { 
+      document.getElementById(modalId).classList.remove('active'); 
+      document.body.style.overflow = 'auto'; 
+    }
+
+    function showRegisterStep(step) {
+      document.getElementById('registerStep1').style.display = step === 1 ? 'block' : 'none';
+      document.getElementById('registerStep2').style.display = step === 2 ? 'block' : 'none';
+    }
+
+    function showPage(pageId) {
+      if (!db.getCurrentUser() && pageId !== 'pageHome') {
+        alert('⚠️ Войдите в аккаунт!');
+        return;
+      }
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+      document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+      if (pageId === 'pageNews') document.getElementById('navNews').classList.add('active');
+      if (pageId === 'pageContacts') document.getElementById('navContacts').classList.add('active');
+    }
+
+    function updateUI() {
+      const user = db.getCurrentUser();
+      const authButtons = document.getElementById('authButtons');
+      const profileSection = document.getElementById('profileSection');
+      
+      if (user) {
+        authButtons.style.display = 'none';
+        profileSection.style.display = 'flex';
+        document.getElementById('profileAvatar').textContent = user.fullName[0];
+      } else {
+        authButtons.style.display = 'flex';
+        profileSection.style.display = 'none';
+      }
+    }
+
+    function renderProfile() {
+      const user = db.getCurrentUser();
+      if (user) {
+        document.getElementById('profileFullName').value = user.fullName;
+        document.getElementById('profilePhone').value = user.phone;
+        document.getElementById('profileEmail').value = user.email;
+        document.getElementById('profileAbout').value = user.about || '';
+        document.getElementById('userRole').value = user.role;
+        
+        const adminPanel = document.getElementById('adminPanel');
+        adminPanel.classList.toggle('show', user.role === 'admin');
+      }
+    }
+
+    function renderNews() {
+      const container = document.getElementById('newsList');
+      container.innerHTML = db.data.news.map(item => `
+        <div class="news-item card">
+          <h3>${item.title}</h3>
+          <div style="color: var(--gray); font-size: 0.875rem; margin-bottom: 0.75rem;">${item.date}</div>
+          <p>${item.content}</p>
+        </div>
+      `).join('');
+    }
+
+    // ✅ РЕГИСТРАЦИЯ - ИСПРАВЛЕНО
+    document.getElementById('registerStep1').onsubmit = (e) => {
+      e.preventDefault();
+      showRegisterStep(2);
+    };
+
+    document.getElementById('registerStep2').onsubmit = (e) => {
+      e.preventDefault();
+      if (document.getElementById('regCode').value === '000000') {
+        const userData = {
+          fullName: document.getElementById('regFullName').value,
+          phone: document.getElementById('regPhone').value,
+          email: document.getElementById('regEmail').value,
+          password: document.getElementById('regPassword').value
+        };
+        
+        const newUser = db.register(userData);
+        db.setCurrentUser(newUser.id);  // 🔥 КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ
+        closeModal('registerModal');
+        updateUI();
+        renderProfile();
+        alert('✅ Регистрация завершена!');
+      } else {
+        alert('❌ Код: 000000');
+      }
+    };
+
+    // ✅ ВХОД - ИСПРАВЛЕНО  
+    document.getElementById('loginForm').onsubmit = (e) => {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      
+      const user = db.findUser(email);
+      if (user && user.password === password) {
+        db.setCurrentUser(user.id);  // 🔥 КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ
+        closeModal('loginModal');
+        updateUI();
+        renderProfile();
+        alert('✅ Вход выполнен!');
+      } else {
+        alert('❌ Неверные данные');
+      }
+    };
+
+    // ПРОЧЕЕ
+    document.getElementById('profileForm').onsubmit = (e) => {
+      e.preventDefault();
+      const user = db.getCurrentUser();
+      if (user) {
+        const updates = {
+          fullName: document.getElementById('profileFullName').value,
+          phone: document.getElementById('profilePhone').value,
+          email: document.getElementById('profileEmail').value,
+          about: document.getElementById('profileAbout').value
+        };
+        db.updateUser(user.id, updates);
+        alert('✅ Сохранено!');
+      }
+    };
+
+    document.getElementById('adminForm').onsubmit = (e) => {
+      e.preventDefault();
+      db.addNews(
+        document.getElementById('postTitle').value,
+        document.getElementById('postContent').value
+      );
+      e.target.reset();
+      renderNews();
+      alert('✅ Опубликовано!');
+    };
+
+    document.getElementById('avatarInput').onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          document.getElementById('avatarPreview').src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+
+    // НАВИГАЦИЯ
+    document.getElementById('logoHome').onclick = () => showPage('pageHome');
+    document.getElementById('navNews').onclick = (e) => { e.preventDefault(); showPage('pageNews'); renderNews(); };
+    document.getElementById('navContacts').onclick = (e) => { e.preventDefault(); showPage('pageContacts'); };
+    document.getElementById('profileBtn').onclick = (e) => { e.preventDefault(); showPage('pageProfile'); renderProfile(); };
+
+    // СТАРТ
+    renderNews();
+    updateUI();
+  </script>
+</body>
+</html>
