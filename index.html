@@ -397,26 +397,28 @@ async function registerUser() {
     }
 
     // ✅ РЕГИСТРАЦИЯ - ИСПРАВЛЕНО
-    document.getElementById('registerStep1').onsubmit = (e) => {
-      e.preventDefault();
-      showRegisterStep(2);
-    };
+    // Замени регистрацию на:
+async function registerUser() {
+  const response = await fetch('/api/auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'register',
+      fullName: document.getElementById('regFullName').value,
+      phone: document.getElementById('regPhone').value,
+      email: document.getElementById('regEmail').value,
+      password: document.getElementById('regPassword').value,
+      code: '000000'
+    })
+  });
+  
+  const result = await response.json();
+  if (result.success) {
+    localStorage.setItem('user', JSON.stringify(result.user));
+    alert('✅ Зарегистрирован в Neon DB!');
+  }
+}
 
-    document.getElementById('registerStep2').onsubmit = (e) => {
-      e.preventDefault();
-      if (document.getElementById('regCode').value === '000000') {
-        const userData = {
-          fullName: document.getElementById('regFullName').value,
-          phone: document.getElementById('regPhone').value,
-          email: document.getElementById('regEmail').value,
-          password: document.getElementById('regPassword').value
-        };
-        
-        const newUser = db.register(userData);
-        db.setCurrentUser(newUser.id);  // 🔥 КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ
-        closeModal('registerModal');
-        updateUI();
-        renderProfile();
         alert('✅ Регистрация завершена!');
       } else {
         alert('❌ Код: 000000');
